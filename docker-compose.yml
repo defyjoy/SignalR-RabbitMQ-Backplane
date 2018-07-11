@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  signalrrabbitmqbackplane:
+    image: ${DOCKER_REGISTRY}signalrrabbitmqbackplane
+    build:
+      context: .
+      dockerfile: SignalRRAbbitMQBackplane/Dockerfile

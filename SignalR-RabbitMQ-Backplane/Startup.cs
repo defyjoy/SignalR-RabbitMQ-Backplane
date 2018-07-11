@@ -2,11 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EasyNetQ;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SpaServices.Webpack;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SignalRRAbbitMQBackplane.Formatters;
+using SignalRRAbbitMQBackplane.SignalRHubs;
+using SignalRRAbbitMQBackplane.Extensions;
+using SignalRRAbbitMQBackplane.RabbitMQServices;
 
 namespace SignalRRAbbitMQBackplane
 {
@@ -22,7 +27,12 @@ namespace SignalRRAbbitMQBackplane
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc();
+            services.AddSignalR();
+            services.AddMvc(opts=> {
+                opts.InputFormatters.Add(new TextPlainInputFormatter());
+            });
+            services.AddSingleton<RabbitListener>();
+            services.AddTransient<IBus>((prov) => RabbitHutch.CreateBus("host=localhost"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -41,6 +51,12 @@ namespace SignalRRAbbitMQBackplane
                 app.UseExceptionHandler("/Home/Error");
             }
 
+            app.UseSignalR(routes =>
+            {
+                routes.MapHub<ChatHub>("/loopy");
+            });
+
+            app.UseRabbitListener();
             app.UseStaticFiles();
 
             app.UseMvc(routes =>
